@@ -14,12 +14,11 @@ function getOAuth2Client() {
 
 function generateAccessCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = '';
-  for (let i = 0; i < 9; i++) {
-    if (i === 4) { code += '-'; continue; }
-    code += chars[Math.floor(Math.random() * chars.length)];
+  let suffix = '';
+  for (let i = 0; i < 4; i++) {
+    suffix += chars[Math.floor(Math.random() * chars.length)];
   }
-  return code;
+  return `TMUS-${suffix}`;
 }
 
 // GET /api/auth/google — returns the Google OAuth URL

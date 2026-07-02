@@ -62,7 +62,7 @@ export default function AuthPage() {
             <input
               className="code-input"
               type="text"
-              placeholder="XXXX-XXXX"
+              placeholder="TMUS-XXXX"
               value={code}
               onChange={e => setCode(e.target.value)}
               maxLength={9}

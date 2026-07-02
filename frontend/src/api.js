@@ -1,8 +1,7 @@
 import axios from 'axios';
 
-const BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
-const api = axios.create({ baseURL: BASE });
+// Empty base = same origin, routed through Vite proxy to backend
+const api = axios.create({ baseURL: '' });
 
 api.interceptors.request.use(config => {
   const code = localStorage.getItem('tadipaar_code');
