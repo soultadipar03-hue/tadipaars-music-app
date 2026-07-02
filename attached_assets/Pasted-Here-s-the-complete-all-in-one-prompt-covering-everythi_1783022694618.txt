@@ -1,0 +1,55 @@
+Here's the complete, all-in-one prompt covering everything we've discussed — paste this into Replit:
+
+Complete Prompt for Replit:
+
+Build a personal music player web app called "Tadipaar's", using React (Vite) for frontend and Node.js (Express) for backend, designed to also work as an installable desktop app (PWA) on PC. Here are the full features:
+1. Splash Screen
+
+On app load, show a splash screen for exactly 5 seconds
+Display "Tadipaar's" in a bold, stylish custom font, centered, dark background, subtle entrance animation
+Auto-transition to the login/home screen after 5 seconds
+
+2. Authentication — Code-Based Access (not repeated Google logins)
+
+First-time setup: If no access code exists yet, show a "Connect Google Drive" button that starts Google OAuth (using GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI secrets I will add). After the user approves access, generate a unique random access code (format like A7X9-K2M4), store it in the database linked to that user's Google OAuth tokens (access token + refresh token), and clearly display the code with the message: "Save this code — enter it on any device to access your music library."
+Returning/new device flow: If no code is stored locally on this device/browser yet, show an "Enter your access code" input instead of Google sign-in. On valid code entry, look up the linked Google Drive tokens from the database, load that user's albums/songs, and save the code locally (browser storage) so they don't need to re-enter it on that same device again.
+Invalid/expired code → show a clear error and allow retry.
+Handle automatic access token refresh using the stored refresh token so users never hit 403 errors after tokens expire.
+
+3. Home Page
+
+Grid/list of all albums
+"+ Create Album" button (name + optional cover image)
+Clicking an album opens the Album page
+
+4. Album Page
+
+Album name, cover, and song list
+"Upload Song" button → opens the device's native file picker (accept only .mp3 files)
+On file selection, upload the MP3 directly to a dedicated Google Drive folder (e.g. "Tadipaar's Music") linked to the user's account, using scope https://www.googleapis.com/auth/drive.file
+Store song metadata (title, album, Drive file ID, streamable link, duration) in the database
+Song appears in the album's list immediately after upload
+No Google login prompt should appear during upload if already authenticated via the access code — token refresh should happen silently in the background
+
+5. Playback
+
+Bottom audio player: play/pause, next, previous, seek bar, volume
+Songs stream directly from Google Drive using the stored file ID/link
+"Shuffle" toggle — plays songs in the current album in random order
+
+6. Design
+
+Dark, modern, stylish personal music-app aesthetic — not a Spotify clone, unique visual identity
+Fully responsive, but optimized primarily for PC/desktop use (not mobile-first)
+Smooth transitions: splash → login/code entry → home → album → player
+
+7. PWA Setup
+
+Add a web app manifest and service worker so the app can be "Installed" from the browser (Chrome install icon) on PC
+When installed, it opens in its own window without the browser address bar, giving a native desktop-app feel
+
+8. Project structure
+
+Frontend code in a frontend folder, backend code in a backend folder
+
+I will add GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URI as Replit Secrets — these should be used for the Google OAuth flow described above. Let me know the exact backend route/path you use for the OAuth callback so I can set the correct redirect URI in Google Cloud Console.
