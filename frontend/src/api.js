@@ -1,7 +1,9 @@
 import axios from 'axios';
 
-// Empty base = same origin, routed through Vite proxy to backend
-const api = axios.create({ baseURL: '' });
+// In dev, empty base = same origin, routed through the Vite proxy to the backend.
+// In production (e.g. Render), the frontend and backend are separate services,
+// so we need an explicit backend URL set via VITE_API_URL at build time.
+const api = axios.create({ baseURL: import.meta.env.VITE_API_URL || '' });
 
 api.interceptors.request.use(config => {
   const code = localStorage.getItem('tadipaar_code');
