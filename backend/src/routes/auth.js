@@ -1,7 +1,6 @@
 const express = require('express');
 const { google } = require('googleapis');
-const { v4: uuidv4 } = require('uuid');
-const { pool } = require('../db');
+const { supabase } = require('../db');
 
 const router = express.Router();
 
@@ -23,6 +22,7 @@ function generateAccessCode() {
   return code;
 }
 
+// GET /api/auth/google — returns the Google OAuth URL
 router.get('/google', (req, res) => {
   const oauth2Client = getOAuth2Client();
   const url = oauth2Client.generateAuthUrl({
@@ -36,6 +36,7 @@ router.get('/google', (req, res) => {
   res.json({ url });
 });
 
+// GET /api/auth/callback — Google redirects here after OAuth approval
 router.get('/callback', async (req, res) => {
   const { code } = req.query;
   if (!code) return res.status(400).send('Missing code');
@@ -45,12 +46,16 @@ router.get('/callback', async (req, res) => {
     const { tokens } = await oauth2Client.getToken(code);
 
     const accessCode = generateAccessCode();
-    await pool.query(
-      'INSERT INTO users (google_access_token, google_refresh_token, access_code) VALUES ($1, $2, $3)',
-      [tokens.access_token, tokens.refresh_token, accessCode]
-    );
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5000';
+    const { error } = await supabase.from('users').insert({
+      google_access_token: tokens.access_token,
+      google_refresh_token: tokens.refresh_token,
+      access_code: accessCode,
+    });
+
+    if (error) throw new Error(error.message);
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     res.redirect(`${frontendUrl}/auth/success?code=${accessCode}`);
   } catch (err) {
     console.error('OAuth callback error:', err);
@@ -58,13 +63,20 @@ router.get('/callback', async (req, res) => {
   }
 });
 
+// POST /api/auth/verify — validates an access code
 router.post('/verify', async (req, res) => {
   const { accessCode } = req.body;
   if (!accessCode) return res.status(400).json({ error: 'Access code required' });
 
   try {
-    const result = await pool.query('SELECT id FROM users WHERE access_code = $1', [accessCode]);
-    if (result.rows.length === 0) return res.status(401).json({ error: 'Invalid access code' });
+    const { data, error } = await supabase
+      .from('users')
+      .select('id')
+      .eq('access_code', accessCode)
+      .single();
+
+    if (error || !data) return res.status(401).json({ error: 'Invalid access code' });
+
     res.json({ valid: true });
   } catch (err) {
     console.error(err);

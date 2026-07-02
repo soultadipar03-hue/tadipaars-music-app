@@ -1,42 +1,57 @@
 const express = require('express');
-const { pool } = require('../db');
+const { supabase } = require('../db');
 const { requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
 router.use(requireAuth);
 
+// GET /api/albums — list all albums for the authenticated user
 router.get('/', async (req, res) => {
   try {
-    const result = await pool.query(
-      'SELECT * FROM albums WHERE user_id = $1 ORDER BY created_at DESC',
-      [req.user.id]
-    );
-    res.json(result.rows);
+    const { data, error } = await supabase
+      .from('albums')
+      .select('*')
+      .eq('user_id', req.user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) throw new Error(error.message);
+    res.json(data);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
+// POST /api/albums — create a new album
 router.post('/', async (req, res) => {
-  const { name } = req.body;
+  const { name, cover_image_url } = req.body;
   if (!name) return res.status(400).json({ error: 'Album name required' });
 
   try {
-    const result = await pool.query(
-      'INSERT INTO albums (user_id, name) VALUES ($1, $2) RETURNING *',
-      [req.user.id, name]
-    );
-    res.json(result.rows[0]);
+    const { data, error } = await supabase
+      .from('albums')
+      .insert({ user_id: req.user.id, name, cover_image_url: cover_image_url || null })
+      .select()
+      .single();
+
+    if (error) throw new Error(error.message);
+    res.json(data);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
+// DELETE /api/albums/:id — delete an album (and its songs cascade in DB)
 router.delete('/:id', async (req, res) => {
   try {
-    await pool.query('DELETE FROM albums WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]);
+    const { error } = await supabase
+      .from('albums')
+      .delete()
+      .eq('id', req.params.id)
+      .eq('user_id', req.user.id);
+
+    if (error) throw new Error(error.message);
     res.json({ success: true });
   } catch (err) {
     console.error(err);
