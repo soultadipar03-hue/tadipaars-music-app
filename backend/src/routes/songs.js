@@ -23,12 +23,13 @@ async function getAuthenticatedDrive(user) {
   });
 
   // Persist refreshed tokens automatically so future requests never 403
+  // Google can rotate both access_token and refresh_token — save both when present
   oauth2Client.on('tokens', async (tokens) => {
-    if (tokens.access_token) {
-      await supabase
-        .from('users')
-        .update({ google_access_token: tokens.access_token })
-        .eq('id', user.id);
+    const updates = {};
+    if (tokens.access_token) updates.google_access_token = tokens.access_token;
+    if (tokens.refresh_token) updates.google_refresh_token = tokens.refresh_token;
+    if (Object.keys(updates).length > 0) {
+      await supabase.from('users').update(updates).eq('id', user.id);
     }
   });
 
