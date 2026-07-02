@@ -1,0 +1,32 @@
+Configure this app's full backend architecture as follows:
+1. File Storage — Google Drive
+
+Using GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI (already added as secrets), on first Google sign-in, create a dedicated folder named "Tadipaar's Music" in the user's Google Drive
+When a user uploads an MP3 via "Upload Song," send the file directly to that Drive folder using the Drive API with scope https://www.googleapis.com/auth/drive.file
+After upload, retrieve the Drive file ID and a streamable link
+Never store the actual audio file anywhere else — Drive is the only place MP3 files live
+When playing a song, stream it directly using the stored Drive file ID/link
+Automatically refresh expired Google access tokens using the stored refresh token, so uploads/playback never fail with a 403 error
+
+2. Database — Supabase (metadata only)
+
+Connect using SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY (already added as secrets)
+Create these tables:
+
+users: id, google_access_token, google_refresh_token, access_code (unique), created_at
+albums: id, user_id (foreign key to users), name, cover_image_url, created_at
+songs: id, album_id (foreign key to albums), title, drive_file_id, drive_link, duration, uploaded_at
+
+
+Only small text/reference data goes here — never audio files
+
+3. Backend hosting — structure for Render deployment
+
+Keep the backend as a standard always-on Node.js/Express server (not serverless functions) — this is what Render's free tier runs
+Make sure the server reads the PORT from process.env.PORT (Render assigns this dynamically) and binds to 0.0.0.0
+Include a package.json with a proper start script (e.g. "start": "node server.js") so Render knows how to run it
+Keep frontend code in a frontend folder and backend code in a backend folder, structured so they can be deployed as two separate services on Render (or the backend can serve the built frontend — whichever is cleaner, your choice)
+
+4. Confirm setup
+Once done, confirm: the exact Supabase table structure created, the Drive folder logic, and that the server correctly reads process.env.PORT and has a working start script ready for Render deployment.
+
