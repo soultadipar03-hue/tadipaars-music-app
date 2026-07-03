@@ -59,22 +59,40 @@ router.get('/callback', async (req, res) => {
     const oauth2Client = getOAuth2Client();
     const { tokens } = await oauth2Client.getToken(code);
 
-    // Always upsert on the fixed access code so re-auth just refreshes tokens
-    const { error } = await supabase
+    // Check if the fixed-code user already exists
+    const { data: existing } = await supabase
       .from('users')
-      .upsert(
-        {
+      .select('id')
+      .eq('access_code', FIXED_ACCESS_CODE)
+      .single();
+
+    if (existing) {
+      // User exists — only update tokens, never touch id or other data
+      // This preserves all albums and songs linked to this user
+      const updates = { google_access_token: tokens.access_token };
+      if (tokens.refresh_token) updates.google_refresh_token = tokens.refresh_token;
+
+      const { error: updateErr } = await supabase
+        .from('users')
+        .update(updates)
+        .eq('id', existing.id);
+
+      if (updateErr) throw new Error(updateErr.message);
+    } else {
+      // First time ever — create the user row with the fixed code
+      const { error: insertErr } = await supabase
+        .from('users')
+        .insert({
           access_code: FIXED_ACCESS_CODE,
           google_access_token: tokens.access_token,
           google_refresh_token: tokens.refresh_token,
-        },
-        { onConflict: 'access_code' }
-      );
+        });
 
-    if (error) throw new Error(error.message);
+      if (insertErr) throw new Error(insertErr.message);
+    }
 
-    // Redirect straight to home — no need to show a code page
-    const redirectUrl = new URL('/', getFrontendUrl());
+    // Redirect to auth/success so the user sees the access code screen
+    const redirectUrl = new URL('/auth/success', getFrontendUrl());
     redirectUrl.searchParams.set('code', FIXED_ACCESS_CODE);
     res.redirect(redirectUrl.toString());
   } catch (err) {
