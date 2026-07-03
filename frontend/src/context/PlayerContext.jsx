@@ -11,16 +11,37 @@ export function PlayerProvider({ children }) {
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
-  // Bumped every time we want to force a new load (handles same-index replays)
   const [loadToken, setLoadToken] = useState(0);
+  // Bumped every time we want to force a new load (handles same-index replays)
 
   // Single audio element — created once, never recreated
   const audioRef = useRef(null);
+  const gainRef = useRef(null);
+  const audioCtxRef = useRef(null);
+
   if (!audioRef.current) {
     const a = new Audio();
     a.preload = 'auto';
+    a.crossOrigin = 'anonymous'; // required for Web Audio API
     audioRef.current = a;
   }
+
+  // Set up Web Audio API gain node for volume boost beyond 1.0
+  const getGainNode = () => {
+    if (gainRef.current) return gainRef.current;
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const source = ctx.createMediaElementSource(audioRef.current);
+      const gain = ctx.createGain();
+      source.connect(gain);
+      gain.connect(ctx.destination);
+      audioCtxRef.current = ctx;
+      gainRef.current = gain;
+      return gain;
+    } catch {
+      return null;
+    }
+  };
 
   // Whether we want the audio to auto-play after the next load
   const shouldPlayRef = useRef(false);
@@ -100,8 +121,16 @@ export function PlayerProvider({ children }) {
     };
   }, []); // runs once — uses refs for latest values
 
-  // ─── Volume ───────────────────────────────────────────────────────────────
-  useEffect(() => { audioRef.current.volume = volume; }, [volume]);
+  // ─── Volume (uses GainNode for boost beyond 1.0) ─────────────────────────
+  useEffect(() => {
+    const gain = getGainNode();
+    if (gain) {
+      gain.gain.value = volume; // 0–3 range via slider
+    } else {
+      // Fallback if Web Audio API unavailable
+      audioRef.current.volume = Math.min(volume, 1);
+    }
+  }, [volume]);
 
   // ─── Actions ──────────────────────────────────────────────────────────────
 
@@ -119,6 +148,10 @@ export function PlayerProvider({ children }) {
 
   const togglePlay = useCallback(() => {
     const audio = audioRef.current;
+    // Resume AudioContext if suspended (browser autoplay policy)
+    if (audioCtxRef.current?.state === 'suspended') {
+      audioCtxRef.current.resume();
+    }
     if (audio.paused) {
       shouldPlayRef.current = true;
       audio.play().catch((err) => {

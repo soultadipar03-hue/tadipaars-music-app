@@ -34,6 +34,11 @@ async function getAuthenticatedDrive(user) {
     }
   });
 
+  // If no refresh token, throw a clear error so the frontend can prompt re-auth
+  if (!user.google_refresh_token) {
+    throw Object.assign(new Error('Google token expired. Please reconnect Google Drive.'), { code: 'REAUTH_REQUIRED' });
+  }
+
   return drive({ version: 'v3', auth: oauth2Client });
 }
 
@@ -170,7 +175,10 @@ router.post('/:albumId/upload', upload.single('file'), async (req, res) => {
     if (error) throw new Error(error.message);
     res.json(data);
   } catch (err) {
-    console.error('Upload error:', err);
+    console.error('Upload error:', err.name);
+    if (err.code === 'REAUTH_REQUIRED') {
+      return res.status(401).json({ error: 'Google Drive session expired. Please reconnect Google Drive from the login page.' });
+    }
     res.status(500).json({ error: 'Upload failed: ' + err.message });
   }
 });

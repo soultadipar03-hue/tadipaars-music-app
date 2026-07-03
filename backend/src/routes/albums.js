@@ -30,6 +30,12 @@ async function getAuthenticatedDrive(user) {
       await supabase.from('users').update(updates).eq('id', user.id);
     }
   });
+
+  // If no refresh token, throw a clear error so the frontend can prompt re-auth
+  if (!user.google_refresh_token) {
+    throw Object.assign(new Error('Google token expired. Please reconnect Google Drive.'), { code: 'REAUTH_REQUIRED' });
+  }
+
   return drive({ version: 'v3', auth: oauth2Client });
 }
 
