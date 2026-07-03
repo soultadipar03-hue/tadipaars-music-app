@@ -70,7 +70,7 @@ router.get('/:albumId', async (req, res) => {
   }
 });
 
-// POST /api/songs/:albumId/upload — upload an MP3 to Google Drive, store metadata in Supabase
+// GET /api/songs/:songId/stream — proxy audio from Google Drive with range request support
 router.get('/:songId/stream', async (req, res) => {
   try {
     const { data: song, error } = await supabase
@@ -83,14 +83,10 @@ router.get('/:songId/stream', async (req, res) => {
     if (error || !song) return res.status(404).json({ error: 'Song not found' });
     if (!song.drive_file_id) return res.status(404).json({ error: 'Song file not found' });
 
-    const drive = await getAuthenticatedDrive(req.user);
-    const metadata = await drive.files.get({
-      fileId: song.drive_file_id,
-      fields: 'name,mimeType,size',
-    });
+    const driveClient = await getAuthenticatedDrive(req.user);
 
     const range = req.headers.range;
-    const driveResponse = await drive.files.get(
+    const driveResponse = await driveClient.files.get(
       { fileId: song.drive_file_id, alt: 'media' },
       {
         responseType: 'stream',
@@ -99,15 +95,16 @@ router.get('/:songId/stream', async (req, res) => {
     );
 
     const headers = driveResponse.headers || {};
-    const contentType = metadata.data.mimeType || headers['content-type'] || 'audio/mpeg';
+    const contentType = headers['content-type'] || 'audio/mpeg';
+    const status = driveResponse.status || (range ? 206 : 200);
 
-    res.status(driveResponse.status || (range ? 206 : 200));
+    res.status(status);
     res.setHeader('Content-Type', contentType);
     res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Cache-Control', 'private, max-age=3600');
 
     if (headers['content-length']) res.setHeader('Content-Length', headers['content-length']);
-    else if (metadata.data.size && !range) res.setHeader('Content-Length', metadata.data.size);
     if (headers['content-range']) res.setHeader('Content-Range', headers['content-range']);
 
     driveResponse.data.on('error', (err) => {

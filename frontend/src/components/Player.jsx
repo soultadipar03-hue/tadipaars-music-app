@@ -13,11 +13,12 @@ export default function Player() {
   if (!current) return null;
 
   return (
-    <div className="player">
+    <div className={`player ${isPlaying ? 'is-playing' : ''}`}>
       <div className="player-song">
-        <div className="player-disc">🎵</div>
+        <div className="player-disc"><span /></div>
         <div className="player-meta">
           <p className="player-title">{current.title}</p>
+          <p className="player-subtitle">Now playing</p>
         </div>
       </div>
 
@@ -27,12 +28,12 @@ export default function Player() {
             className={`player-btn ${shuffle ? 'active' : ''}`}
             onClick={() => setShuffle(s => !s)}
             title="Shuffle"
-          >⇄</button>
-          <button className="player-btn" onClick={playPrev}>⏮</button>
-          <button className="player-btn play-btn" onClick={togglePlay}>
-            {isPlaying ? '⏸' : '▶'}
+          >SH</button>
+          <button className="player-btn" onClick={playPrev} title="Previous">PR</button>
+          <button className="player-btn play-btn" onClick={togglePlay} title={isPlaying ? 'Pause' : 'Play'}>
+            {isPlaying ? 'II' : '▶'}
           </button>
-          <button className="player-btn" onClick={playNext}>⏭</button>
+          <button className="player-btn" onClick={playNext} title="Next">NX</button>
         </div>
         <div className="player-seek">
           <span className="player-time">{fmt(progress)}</span>
@@ -49,7 +50,7 @@ export default function Player() {
       </div>
 
       <div className="player-right">
-        <span className="vol-icon">🔊</span>
+        <span className="vol-icon">VOL</span>
         <input
           type="range"
           min={0}
