@@ -69,7 +69,6 @@ router.get('/:id/cover', async (req, res) => {
     const contentType = driveResponse.headers?.['content-type'] || 'image/jpeg';
     res.setHeader('Content-Type', contentType);
     res.setHeader('Cache-Control', 'public, max-age=86400');
-    res.setHeader('Access-Control-Allow-Origin', '*');
     driveResponse.data.pipe(res);
   } catch (err) {
     console.error('Cover proxy error:', err);
@@ -96,13 +95,17 @@ router.get('/', async (req, res) => {
 
 // POST /api/albums — create a new album
 router.post('/', async (req, res) => {
-  const { name, cover_image_url } = req.body;
-  if (!name) return res.status(400).json({ error: 'Album name required' });
+  const rawName = req.body.name;
+  if (!rawName) return res.status(400).json({ error: 'Album name required' });
+
+  // Sanitize name — strip control chars, limit length
+  const name = String(rawName).replace(/[<>"'&\x00-\x1f]/g, '').trim().slice(0, 100);
+  if (!name) return res.status(400).json({ error: 'Album name is invalid' });
 
   try {
     const { data, error } = await supabase
       .from('albums')
-      .insert({ user_id: req.user.id, name, cover_image_url: cover_image_url || null })
+      .insert({ user_id: req.user.id, name })
       .select()
       .single();
 

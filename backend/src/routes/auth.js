@@ -4,8 +4,9 @@ const { supabase } = require('../db');
 
 const router = express.Router();
 
-// Fixed access code — the single password for this app
-const FIXED_ACCESS_CODE = process.env.ACCESS_CODE || 'moveon';
+// Fixed access code — must be set via ACCESS_CODE env var
+const FIXED_ACCESS_CODE = process.env.ACCESS_CODE;
+if (!FIXED_ACCESS_CODE) throw new Error('ACCESS_CODE environment variable must be set');
 
 function getOAuth2Client() {
   return new OAuth2Client(
@@ -91,12 +92,12 @@ router.get('/callback', async (req, res) => {
       if (insertErr) throw new Error(insertErr.message);
     }
 
-    // Redirect to auth/success so the user sees the access code screen
+    // Redirect to auth/success — do NOT put the access code in the URL
     const redirectUrl = new URL('/auth/success', getFrontendUrl());
-    redirectUrl.searchParams.set('code', FIXED_ACCESS_CODE);
     res.redirect(redirectUrl.toString());
   } catch (err) {
-    console.error('OAuth callback error:', err);
+    // Never log tokens or secrets — log only the error type
+    console.error('OAuth callback error:', err.name, err.message?.replace(/token|secret|key/gi, '[REDACTED]'));
     res.status(500).send('Authentication failed');
   }
 });
@@ -104,20 +105,26 @@ router.get('/callback', async (req, res) => {
 // POST /api/auth/verify — validates an access code
 router.post('/verify', async (req, res) => {
   const { accessCode } = req.body;
-  if (!accessCode) return res.status(400).json({ error: 'Access code required' });
+  if (!accessCode || typeof accessCode !== 'string') {
+    return res.status(400).json({ error: 'Access code required' });
+  }
+  // Reject obviously invalid lengths early (avoid unnecessary DB hits)
+  if (accessCode.length > 64) {
+    return res.status(401).json({ error: 'Invalid access code' });
+  }
 
   try {
     const { data, error } = await supabase
       .from('users')
       .select('id')
-      .eq('access_code', accessCode)
+      .eq('access_code', accessCode.trim())
       .single();
 
     if (error || !data) return res.status(401).json({ error: 'Invalid access code' });
 
     res.json({ valid: true });
   } catch (err) {
-    console.error(err);
+    console.error('Verify error:', err.name);
     res.status(500).json({ error: 'Server error' });
   }
 });

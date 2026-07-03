@@ -9,7 +9,7 @@ const stream = require('stream');
 const router = express.Router();
 router.use(requireAuth);
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 100 * 1024 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 90 * 1024 * 1024 } });
 
 // Build an authenticated Google Drive client for a user, with auto token refresh
 async function getAuthenticatedDrive(user) {
@@ -84,7 +84,6 @@ router.get('/:songId/stream', async (req, res) => {
     res.status(status);
     res.setHeader('Content-Type', contentType);
     res.setHeader('Accept-Ranges', 'bytes');
-    res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Cache-Control', 'private, max-age=3600');
 
     if (headers['content-length']) res.setHeader('Content-Length', headers['content-length']);
@@ -123,11 +122,19 @@ router.get('/:albumId', async (req, res) => {
 router.post('/:albumId/upload', upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file provided' });
 
+  // Validate MIME type — only allow audio files
+  const allowedMimes = ['audio/mpeg', 'audio/mp3', 'audio/mp4', 'audio/x-m4a', 'audio/ogg', 'audio/wav', 'audio/flac'];
+  if (!allowedMimes.includes(req.file.mimetype)) {
+    return res.status(400).json({ error: 'Only audio files are allowed (MP3, M4A, OGG, WAV, FLAC)' });
+  }
+
   try {
     const drive = await getAuthenticatedDrive(req.user);
     const folderId = await getOrCreateFolder(drive);
 
-    const title = req.body.title || req.file.originalname.replace(/\.mp3$/i, '');
+    // Sanitize title — strip control chars, limit length
+    const rawTitle = req.body.title || req.file.originalname.replace(/\.mp3$/i, '');
+    const title = rawTitle.replace(/[<>"'&\x00-\x1f]/g, '').trim().slice(0, 200) || 'Untitled';
     const bufferStream = new stream.PassThrough();
     bufferStream.end(req.file.buffer);
 
