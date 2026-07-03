@@ -3,7 +3,8 @@ import axios from 'axios';
 // In dev, empty base = same origin, routed through the Vite proxy to the backend.
 // In production (e.g. Render), the frontend and backend are separate services,
 // so we need an explicit backend URL set via VITE_API_URL at build time.
-const api = axios.create({ baseURL: import.meta.env.VITE_API_URL || '' });
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+const api = axios.create({ baseURL: API_BASE_URL });
 
 api.interceptors.request.use(config => {
   const code = localStorage.getItem('tadipaar_code');
@@ -30,5 +31,10 @@ export const uploadSong = (albumId, file, title, onProgress) => {
 };
 export const deleteSong = (id) => api.delete(`/api/songs/${id}`);
 
-export const getStreamUrl = (driveFileId) =>
-  `https://drive.google.com/uc?export=download&id=${driveFileId}`;
+export const getStreamUrl = (songId) => {
+  const params = new URLSearchParams();
+  const code = localStorage.getItem('tadipaar_code');
+  if (code) params.set('code', code);
+  const query = params.toString();
+  return `${API_BASE_URL}/api/songs/${songId}/stream${query ? `?${query}` : ''}`;
+};

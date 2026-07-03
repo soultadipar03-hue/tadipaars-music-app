@@ -8,7 +8,7 @@ export default function AlbumPage() {
   const { id } = useParams();
   const { state } = useLocation();
   const navigate = useNavigate();
-  const { playSongs, current, isPlaying, togglePlay } = usePlayer();
+  const { playSongs, current, isPlaying, togglePlay, setShuffle } = usePlayer();
   const album = state?.album || { name: 'Album', id };
 
   const [songs, setSongs] = useState([]);
@@ -55,6 +55,13 @@ export default function AlbumPage() {
     }
   };
 
+  const handleShuffle = () => {
+    if (songs.length === 0) return;
+    const startIndex = Math.floor(Math.random() * songs.length);
+    setShuffle(true);
+    playSongs(songs, startIndex);
+  };
+
   const formatDuration = (s) => {
     if (!s) return '--:--';
     return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
@@ -76,6 +83,11 @@ export default function AlbumPage() {
               {songs.length > 0 && (
                 <button className="btn-primary" onClick={() => playSongs(songs, 0)}>
                   ▶ Play All
+                </button>
+              )}
+              {songs.length > 0 && (
+                <button className="btn-outline" onClick={handleShuffle}>
+                  Shuffle
                 </button>
               )}
               <button

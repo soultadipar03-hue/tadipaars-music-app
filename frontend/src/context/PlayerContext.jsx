@@ -18,7 +18,9 @@ export function PlayerProvider({ children }) {
   useEffect(() => {
     const audio = audioRef.current;
     if (!current) return;
-    audio.src = getStreamUrl(current.drive_file_id);
+    setProgress(0);
+    setDuration(0);
+    audio.src = getStreamUrl(current.id);
     audio.load();
     if (isPlaying) audio.play().catch(console.error);
   }, [currentIndex, queue]);
@@ -26,7 +28,7 @@ export function PlayerProvider({ children }) {
   useEffect(() => {
     const audio = audioRef.current;
     const onTime = () => setProgress(audio.currentTime);
-    const onDuration = () => setDuration(audio.duration);
+    const onDuration = () => setDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
     const onEnded = () => playNext();
     audio.addEventListener('timeupdate', onTime);
     audio.addEventListener('loadedmetadata', onDuration);
@@ -47,7 +49,7 @@ export function PlayerProvider({ children }) {
     setCurrentIndex(startIndex);
     setIsPlaying(true);
     const audio = audioRef.current;
-    audio.src = getStreamUrl(songs[startIndex].drive_file_id);
+    audio.src = getStreamUrl(songs[startIndex].id);
     audio.load();
     audio.play().catch(console.error);
   };

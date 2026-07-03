@@ -1,7 +1,7 @@
 const { supabase } = require('../db');
 
 async function requireAuth(req, res, next) {
-  const accessCode = req.headers['x-access-code'];
+  const accessCode = req.headers['x-access-code'] || req.query.code || req.query.accessCode;
   if (!accessCode) return res.status(401).json({ error: 'No access code provided' });
 
   const { data, error } = await supabase

@@ -71,6 +71,57 @@ router.get('/:albumId', async (req, res) => {
 });
 
 // POST /api/songs/:albumId/upload — upload an MP3 to Google Drive, store metadata in Supabase
+router.get('/:songId/stream', async (req, res) => {
+  try {
+    const { data: song, error } = await supabase
+      .from('songs')
+      .select('*')
+      .eq('id', req.params.songId)
+      .eq('user_id', req.user.id)
+      .single();
+
+    if (error || !song) return res.status(404).json({ error: 'Song not found' });
+    if (!song.drive_file_id) return res.status(404).json({ error: 'Song file not found' });
+
+    const drive = await getAuthenticatedDrive(req.user);
+    const metadata = await drive.files.get({
+      fileId: song.drive_file_id,
+      fields: 'name,mimeType,size',
+    });
+
+    const range = req.headers.range;
+    const driveResponse = await drive.files.get(
+      { fileId: song.drive_file_id, alt: 'media' },
+      {
+        responseType: 'stream',
+        headers: range ? { Range: range } : undefined,
+      }
+    );
+
+    const headers = driveResponse.headers || {};
+    const contentType = metadata.data.mimeType || headers['content-type'] || 'audio/mpeg';
+
+    res.status(driveResponse.status || (range ? 206 : 200));
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('Cache-Control', 'private, max-age=3600');
+
+    if (headers['content-length']) res.setHeader('Content-Length', headers['content-length']);
+    else if (metadata.data.size && !range) res.setHeader('Content-Length', metadata.data.size);
+    if (headers['content-range']) res.setHeader('Content-Range', headers['content-range']);
+
+    driveResponse.data.on('error', (err) => {
+      console.error('Drive stream error:', err);
+      if (!res.headersSent) res.status(500).end('Stream failed');
+      else res.destroy(err);
+    });
+    driveResponse.data.pipe(res);
+  } catch (err) {
+    console.error('Stream error:', err);
+    if (!res.headersSent) res.status(500).json({ error: 'Stream failed: ' + err.message });
+  }
+});
+
 router.post('/:albumId/upload', upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file provided' });
 
