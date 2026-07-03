@@ -89,6 +89,7 @@ router.get('/:songId/stream', async (req, res) => {
     res.status(status);
     res.setHeader('Content-Type', contentType);
     res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('Access-Control-Allow-Origin', process.env.FRONTEND_URL || '*');
     res.setHeader('Cache-Control', 'private, max-age=3600');
 
     if (headers['content-length']) res.setHeader('Content-Length', headers['content-length']);

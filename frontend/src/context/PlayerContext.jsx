@@ -22,7 +22,6 @@ export function PlayerProvider({ children }) {
   if (!audioRef.current) {
     const a = new Audio();
     a.preload = 'auto';
-    a.crossOrigin = 'anonymous'; // required for Web Audio API
     audioRef.current = a;
   }
 
@@ -30,8 +29,12 @@ export function PlayerProvider({ children }) {
   const getGainNode = () => {
     if (gainRef.current) return gainRef.current;
     try {
+      // Only init after user gesture — crossOrigin not needed since same-origin
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const source = ctx.createMediaElementSource(audioRef.current);
+      const audio = audioRef.current;
+      // crossOrigin must be set before src for CORS — but since we proxy
+      // through our own backend (same origin), we don't need it
+      const source = ctx.createMediaElementSource(audio);
       const gain = ctx.createGain();
       source.connect(gain);
       gain.connect(ctx.destination);
