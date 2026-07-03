@@ -15,7 +15,9 @@ function AppRoutes() {
   return (
     <>
       <Routes>
+        {/* Always accessible — shown after Google OAuth */}
         <Route path="/auth/success" element={<AuthSuccess />} />
+
         {!accessCode ? (
           <>
             <Route path="/login" element={<AuthPage />} />

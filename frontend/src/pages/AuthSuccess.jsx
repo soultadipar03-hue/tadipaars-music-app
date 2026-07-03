@@ -1,16 +1,7 @@
-import { useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 export default function AuthSuccess() {
-  const [params] = useSearchParams();
-  const { login } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const c = params.get('code');
-    if (c) login(c);
-  }, []);
 
   return (
     <div style={{
@@ -25,22 +16,23 @@ export default function AuthSuccess() {
       textAlign: 'center',
       fontFamily: 'Inter, sans-serif',
     }}>
-      <div style={{ fontSize: '2.5rem' }}>🎉</div>
+      <div style={{ fontSize: '2.5rem' }}>✅</div>
 
-      <h2 style={{ color: '#fff', fontSize: '1.6rem', fontWeight: 800, margin: 0 }}>
+      <h2 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: 800, margin: 0 }}>
         Google Drive Connected!
       </h2>
 
       <p style={{ color: 'rgba(255,255,255,0.45)', margin: 0, fontSize: '0.88rem' }}>
-        Your universal access password is:
+        Enter your access code to continue:
       </p>
 
+      {/* Show the fixed password */}
       <div style={{
         background: 'rgba(255,255,255,0.07)',
         border: '1px solid rgba(255,255,255,0.15)',
         borderRadius: '12px',
-        padding: '16px 40px',
-        fontSize: '2rem',
+        padding: '14px 40px',
+        fontSize: '1.8rem',
         letterSpacing: '6px',
         color: '#fff',
         fontWeight: 800,
@@ -49,12 +41,13 @@ export default function AuthSuccess() {
         moveon
       </div>
 
-      <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.78rem', maxWidth: 300, margin: 0 }}>
-        Use this password anytime to log in — it never changes.
+      <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem', maxWidth: 280, margin: 0 }}>
+        This is your permanent password — use it every time you log in.
       </p>
 
+      {/* Send them to login page to type the code */}
       <button
-        onClick={() => navigate('/')}
+        onClick={() => navigate('/login')}
         style={{
           marginTop: 8,
           height: 42,
@@ -68,7 +61,7 @@ export default function AuthSuccess() {
           cursor: 'pointer',
         }}
       >
-        Go to My Music →
+        Enter Access Code →
       </button>
     </div>
   );
