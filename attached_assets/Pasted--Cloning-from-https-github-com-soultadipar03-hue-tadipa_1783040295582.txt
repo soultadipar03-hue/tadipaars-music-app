@@ -1,0 +1,67 @@
+==> Cloning from https://github.com/soultadipar03-hue/tadipaars-music-app
+==> Checking out commit 9aaa06af305bf6df78ad4fa84b0796496afaeec0 in branch main
+==> Requesting Node.js version 18.x
+==> Using Node.js version 18.20.8 via /opt/render/project/src/backend/package.json
+==> Node.js version 18.20.8 has reached end-of-life.
+==> Upgrade to a maintained version to receive important security updates.
+==> Information on maintained Node.js versions: https://nodejs.org/en/about/previous-releases
+==> Docs on specifying a Node.js version: https://render.com/docs/node-version
+==> Installing Node.js version 18.20.8...
+==> Running build command 'npm install --no-audit --no-fund'...
+npm error Exit handler never called!
+npm error This is an error with npm itself. Please report this error at:
+npm error   <https://github.com/npm/cli/issues>
+npm error A complete log of this run can be found in: /opt/render/.cache/_logs/2026-07-03T00_49_14_063Z-debug-0.log
+==> Uploading build...
+==> Uploaded in 2.1s. Compression took 0.6s
+==> Build successful 🎉
+==> Deploying...
+==> Setting WEB_CONCURRENCY=1 by default, based on available CPUs in the instance
+==> Running 'npm start'
+> backend@1.0.0 start
+> node src/index.js
+node:internal/modules/cjs/loader:1143
+  throw err;
+  ^
+Error: Cannot find module 'dotenv'
+Require stack:
+- /opt/render/project/src/backend/src/index.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+    at Module._load (node:internal/modules/cjs/loader:981:27)
+    at Module.require (node:internal/modules/cjs/loader:1231:19)
+    at require (node:internal/modules/helpers:177:18)
+    at Object.<anonymous> (/opt/render/project/src/backend/src/index.js:1:1)
+    at Module._compile (node:internal/modules/cjs/loader:1364:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1422:10)
+    at Module.load (node:internal/modules/cjs/loader:1203:32)
+    at Module._load (node:internal/modules/cjs/loader:1019:12)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:128:12) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/opt/render/project/src/backend/src/index.js' ]
+}
+Node.js v18.20.8
+==> Exited with status 1
+==> Common ways to troubleshoot your deploy: https://render.com/docs/troubleshooting-deploys
+==> Running 'npm start'
+> backend@1.0.0 start
+> node src/index.js
+node:internal/modules/cjs/loader:1143
+  throw err;
+  ^
+Error: Cannot find module 'dotenv'
+Require stack:
+- /opt/render/project/src/backend/src/index.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+    at Module._load (node:internal/modules/cjs/loader:981:27)
+    at Module.require (node:internal/modules/cjs/loader:1231:19)
+    at require (node:internal/modules/helpers:177:18)
+    at Object.<anonymous> (/opt/render/project/src/backend/src/index.js:1:1)
+    at Module._compile (node:internal/modules/cjs/loader:1364:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1422:10)
+    at Module.load (node:internal/modules/cjs/loader:1203:32)
+    at Module._load (node:internal/modules/cjs/loader:1019:12)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:128:12) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/opt/render/project/src/backend/src/index.js' ]
+}
+Node.js v18.20.8

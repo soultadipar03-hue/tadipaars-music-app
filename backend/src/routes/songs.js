@@ -1,5 +1,6 @@
 const express = require('express');
-const { google } = require('googleapis');
+const { drive } = require('@googleapis/drive');
+const { OAuth2Client } = require('google-auth-library');
 const { supabase } = require('../db');
 const { requireAuth } = require('../middleware/auth');
 const multer = require('multer');
@@ -12,7 +13,7 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 100
 
 // Build an authenticated Google Drive client for a user, with auto token refresh
 async function getAuthenticatedDrive(user) {
-  const oauth2Client = new google.auth.OAuth2(
+  const oauth2Client = new OAuth2Client(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
     process.env.GOOGLE_REDIRECT_URI
@@ -33,7 +34,7 @@ async function getAuthenticatedDrive(user) {
     }
   });
 
-  return google.drive({ version: 'v3', auth: oauth2Client });
+  return drive({ version: 'v3', auth: oauth2Client });
 }
 
 // Find or create the "Tadipaar's Music" folder in the user's Drive
