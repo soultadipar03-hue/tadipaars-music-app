@@ -22,6 +22,27 @@ function generateAccessCode() {
 }
 
 // GET /api/auth/google — returns the Google OAuth URL
+const DEFAULT_FRONTEND_URL = 'http://localhost:5173';
+
+function getFrontendUrl() {
+  const configuredUrl = process.env.FRONTEND_URL || DEFAULT_FRONTEND_URL;
+  const normalizedUrl = configuredUrl
+    .trim()
+    .replace(/^FRONTEND_URL\s*=\s*/i, '')
+    .replace(/\/+$/, '');
+
+  try {
+    const url = new URL(normalizedUrl);
+    if (!['http:', 'https:'].includes(url.protocol)) {
+      throw new Error(`Unsupported frontend URL protocol: ${url.protocol}`);
+    }
+    return url.origin;
+  } catch (err) {
+    console.warn(`Invalid FRONTEND_URL "${configuredUrl}", falling back to ${DEFAULT_FRONTEND_URL}`);
+    return DEFAULT_FRONTEND_URL;
+  }
+}
+
 router.get('/google', (req, res) => {
   const oauth2Client = getOAuth2Client();
   const url = oauth2Client.generateAuthUrl({
@@ -54,8 +75,9 @@ router.get('/callback', async (req, res) => {
 
     if (error) throw new Error(error.message);
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    res.redirect(`${frontendUrl}/auth/success?code=${accessCode}`);
+    const redirectUrl = new URL('/auth/success', getFrontendUrl());
+    redirectUrl.searchParams.set('code', accessCode);
+    res.redirect(redirectUrl.toString());
   } catch (err) {
     console.error('OAuth callback error:', err);
     res.status(500).send('Authentication failed');
