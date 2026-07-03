@@ -157,10 +157,23 @@ export function PlayerProvider({ children }) {
     setProgress(time);
   }, []);
 
+  // Stop playback and clear the player completely
+  const clearPlayer = useCallback(() => {
+    const audio = audioRef.current;
+    shouldPlayRef.current = false;
+    audio.pause();
+    audio.src = '';
+    setQueue([]);
+    setCurrentIndex(0);
+    setProgress(0);
+    setDuration(0);
+    setIsPlaying(false);
+  }, []);
+
   return (
     <PlayerContext.Provider value={{
       current, queue, isPlaying, shuffle, progress, duration, volume,
-      playSongs, togglePlay, playNext, playPrev, seek,
+      playSongs, togglePlay, playNext, playPrev, seek, clearPlayer,
       setShuffle, setVolume,
     }}>
       {children}

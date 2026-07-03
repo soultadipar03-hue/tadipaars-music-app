@@ -8,7 +8,7 @@ export default function AlbumPage() {
   const { id } = useParams();
   const { state } = useLocation();
   const navigate = useNavigate();
-  const { playSongs, current, isPlaying, togglePlay, setShuffle } = usePlayer();
+  const { playSongs, current, isPlaying, togglePlay, setShuffle, clearPlayer } = usePlayer();
   const album = state?.album || { name: 'Album', id };
 
   const [songs, setSongs] = useState([]);
@@ -59,6 +59,8 @@ export default function AlbumPage() {
     e.stopPropagation();
     if (!confirm('Delete this song?')) return;
     await deleteSong(songId);
+    // If the deleted song is currently in the player, clear it
+    if (current?.id === songId) clearPlayer();
     setSongs(prev => prev.filter(s => s.id !== songId));
   };
 
