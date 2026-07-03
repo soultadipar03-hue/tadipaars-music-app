@@ -1,7 +1,31 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { verifyCode } from '../api';
 
 export default function AuthSuccess() {
   const navigate = useNavigate();
+  const { login } = useAuth();
+  const [code, setCode] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const trimmed = code.trim();
+    if (!trimmed) return;
+    setLoading(true);
+    setError('');
+    try {
+      await verifyCode(trimmed);
+      login(trimmed);
+      navigate('/');
+    } catch {
+      setError('Wrong password. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div style={{
@@ -23,46 +47,51 @@ export default function AuthSuccess() {
       </h2>
 
       <p style={{ color: 'rgba(255,255,255,0.45)', margin: 0, fontSize: '0.88rem' }}>
-        Enter your access code to continue:
+        Enter your access code to continue
       </p>
 
-      {/* Show the fixed password */}
-      <div style={{
-        background: 'rgba(255,255,255,0.07)',
-        border: '1px solid rgba(255,255,255,0.15)',
-        borderRadius: '12px',
-        padding: '14px 40px',
-        fontSize: '1.8rem',
-        letterSpacing: '6px',
-        color: '#fff',
-        fontWeight: 800,
-        userSelect: 'all',
-      }}>
-        moveon
-      </div>
-
-      <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem', maxWidth: 280, margin: 0 }}>
-        This is your permanent password — use it every time you log in.
-      </p>
-
-      {/* Send them to login page to type the code */}
-      <button
-        onClick={() => navigate('/login')}
-        style={{
-          marginTop: 8,
-          height: 42,
-          padding: '0 28px',
-          border: 0,
-          borderRadius: 21,
-          background: '#fff',
-          color: '#0d0d0f',
-          fontSize: '0.88rem',
-          fontWeight: 700,
-          cursor: 'pointer',
-        }}
-      >
-        Enter Access Code →
-      </button>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', maxWidth: '320px' }}>
+        <input
+          type="password"
+          placeholder="Enter password"
+          value={code}
+          onChange={e => setCode(e.target.value)}
+          autoFocus
+          spellCheck={false}
+          style={{
+            height: '48px',
+            padding: '0 18px',
+            borderRadius: '10px',
+            border: '1px solid rgba(255,255,255,0.15)',
+            background: 'rgba(255,255,255,0.07)',
+            color: '#fff',
+            fontSize: '1rem',
+            outline: 'none',
+            textAlign: 'center',
+            letterSpacing: '4px',
+          }}
+        />
+        {error && (
+          <p style={{ margin: 0, color: '#f87171', fontSize: '0.82rem' }}>{error}</p>
+        )}
+        <button
+          type="submit"
+          disabled={loading}
+          style={{
+            height: '42px',
+            border: 0,
+            borderRadius: '21px',
+            background: '#fff',
+            color: '#0d0d0f',
+            fontSize: '0.88rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            opacity: loading ? 0.6 : 1,
+          }}
+        >
+          {loading ? 'Verifying...' : 'Enter App →'}
+        </button>
+      </form>
     </div>
   );
 }
