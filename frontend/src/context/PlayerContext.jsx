@@ -41,20 +41,30 @@ export function PlayerProvider({ children }) {
     const audio = audioRef.current;
     setProgress(0);
     setDuration(0);
-    audio.src = getStreamUrl(current.id);
-    audio.load();
-    if (shouldPlayRef.current) {
-      // play() returns a Promise; wait for it so we handle AbortError gracefully
-      const playPromise = audio.play();
-      if (playPromise !== undefined) {
-        playPromise.catch((err) => {
-          // AbortError is fine (happens if load() interrupts a play — should not
-          // occur here since we never double-load). Other errors are real.
+
+    const onCanPlay = () => {
+      if (shouldPlayRef.current) {
+        audio.play().catch((err) => {
           if (err.name !== 'AbortError') console.error('play error:', err);
         });
       }
-    }
-  // loadToken forces this effect even when currentIndex + queue ref stay the same
+    };
+
+    const onError = () => {
+      const err = audio.error;
+      console.error('Audio load error:', err?.code, err?.message, '| src:', audio.src);
+    };
+
+    audio.removeEventListener('canplay', onCanPlay);
+    audio.removeEventListener('error', onError);
+    audio.addEventListener('canplay', onCanPlay, { once: true });
+    audio.addEventListener('error', onError, { once: true });
+
+    const streamUrl = getStreamUrl(current.id);
+    console.log('[Player] Loading song:', current.title, '| url:', streamUrl);
+    audio.src = streamUrl;
+    audio.load();
+
   }, [currentIndex, queue, loadToken]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Sync React state from browser audio events ───────────────────────────
@@ -97,13 +107,13 @@ export function PlayerProvider({ children }) {
 
   /**
    * Start playing a list of songs at a given index.
-   * All audio work is handled by the useEffect above — we just set state.
+   * shouldPlayRef is set BEFORE state updates so the load effect sees it as true.
    */
   const playSongs = useCallback((songs, startIndex = 0) => {
     shouldPlayRef.current = true;
+    // Flush both queue + index atomically then bump token to guarantee effect fires
     setQueue(songs);
     setCurrentIndex(startIndex);
-    // Always bump the token so the effect fires even if index+queue are "same"
     setLoadToken(t => t + 1);
   }, []);
 
