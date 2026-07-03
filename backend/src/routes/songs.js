@@ -52,25 +52,8 @@ async function getOrCreateFolder(drive) {
   return folder.data.id;
 }
 
-// GET /api/songs/:albumId — list all songs in an album
-router.get('/:albumId', async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('songs')
-      .select('*')
-      .eq('album_id', req.params.albumId)
-      .eq('user_id', req.user.id)
-      .order('uploaded_at', { ascending: true });
-
-    if (error) throw new Error(error.message);
-    res.json(data);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
 // GET /api/songs/:songId/stream — proxy audio from Google Drive with range request support
+// NOTE: must be registered BEFORE /:albumId so Express doesn't swallow the /stream segment
 router.get('/:songId/stream', async (req, res) => {
   try {
     const { data: song, error } = await supabase
@@ -116,6 +99,24 @@ router.get('/:songId/stream', async (req, res) => {
   } catch (err) {
     console.error('Stream error:', err);
     if (!res.headersSent) res.status(500).json({ error: 'Stream failed: ' + err.message });
+  }
+});
+
+// GET /api/songs/:albumId — list all songs in an album
+router.get('/:albumId', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('songs')
+      .select('*')
+      .eq('album_id', req.params.albumId)
+      .eq('user_id', req.user.id)
+      .order('uploaded_at', { ascending: true });
+
+    if (error) throw new Error(error.message);
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

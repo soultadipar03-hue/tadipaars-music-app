@@ -146,8 +146,15 @@ export default function Home() {
               <div className="albums-grid">
                 {albums.map((album, i) => (
                   <div key={album.id} className="album-card" onClick={() => openAlbum(album)}>
-                    <div className="album-cover" style={{ background: albumColors[i % albumColors.length] }}>
-                      <span className="album-cover-icon">{album.name}</span>
+                    <div
+                      className="album-cover"
+                      style={album.cover_image_url ? {} : { background: albumColors[i % albumColors.length] }}
+                    >
+                      {album.cover_image_url ? (
+                        <img src={album.cover_image_url} alt={album.name} className="album-cover-img" />
+                      ) : (
+                        <span className="album-cover-icon">{album.name}</span>
+                      )}
                     </div>
                     <div className="album-info">
                       <h3 className="album-name">{album.name}</h3>

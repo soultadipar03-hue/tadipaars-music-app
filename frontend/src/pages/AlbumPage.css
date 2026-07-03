@@ -1,30 +1,149 @@
 /* ═══════════════════════════════════════════
-   ALBUMPAGE.CSS  — reference-image dark UI
+   ALBUMPAGE.CSS  — cinematic blurred-bg UI
 ═══════════════════════════════════════════ */
 
+/* ── Page wrapper ───────────────────────── */
 .album-page {
   min-height: 100vh;
-  background: var(--bg-0);
+  background: #0d0d0f;
+  position: relative;
+  overflow: hidden;
 }
 
-/* ── Main content area ──────────────────── */
-.album-main {
-  min-width: 0;
-  padding: 0 0 110px;
-  background: var(--bg-1);
+/* Blurred full-page bg pulled from cover art */
+.album-bg-blur {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(60px) brightness(0.35) saturate(1.4);
+  transform: scale(1.12);
+  transition: background-image 0.6s ease;
+}
+
+/* fallback when no cover */
+.album-bg-blur.no-cover {
+  background: radial-gradient(ellipse at 40% 30%, #2a0e1e 0%, #0d0d0f 70%);
+  filter: none;
+}
+
+/* Shell sits above blur */
+.music-shell {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+}
+
+/* ── Sidebar ─────────────────────────────── */
+.sidebar {
+  min-height: 100vh;
+  padding: 24px 10px 100px;
+  background: rgba(10, 10, 12, 0.7);
+  backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(255,255,255,0.06);
   display: flex;
   flex-direction: column;
+  gap: 0;
+  overflow-y: auto;
+}
+
+.sidebar-section { margin-bottom: 28px; }
+
+.sidebar-label {
+  margin: 0 10px 6px;
+  color: rgba(255,255,255,0.35);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sidebar-item {
+  width: 100%;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 2px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  color: rgba(255,255,255,0.55);
+  background: transparent;
+  text-align: left;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.sidebar-item:hover {
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.9);
+}
+
+.sidebar-item.active {
+  color: #fff;
+  background: rgba(255,255,255,0.12);
+  font-weight: 600;
+}
+
+.sidebar-item.dim { color: rgba(255,255,255,0.38); }
+.sidebar-item.dim:hover { color: rgba(255,255,255,0.7); }
+
+.sidebar-icon {
+  width: 18px;
+  display: inline-grid;
+  place-items: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  opacity: 0.6;
+}
+
+.sidebar-profile {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 14px 10px 0;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.6);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.profile-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: rgba(255,255,255,0.15);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+/* ── Main area ──────────────────────────── */
+.album-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 110px;
 }
 
 /* ── Top bar ─────────────────────────────── */
 .album-topbar {
-  height: 54px;
+  height: 52px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 18px;
   padding: 0 28px;
-  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
@@ -36,163 +155,218 @@
 
 .album-breadcrumb {
   margin: 0;
-  color: var(--text-2);
-  font-size: 0.78rem;
+  color: rgba(255,255,255,0.4);
+  font-size: 0.75rem;
   font-weight: 500;
 }
 
-/* ── Hero: cover + info side by side ─────── */
-.album-hero {
+/* ── Content area: cover LEFT + info+songs RIGHT ── */
+.album-content {
+  flex: 1;
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
-  gap: 36px;
-  align-items: flex-end;
-  padding: 36px 28px 32px;
-  background: linear-gradient(180deg, var(--bg-2) 0%, var(--bg-1) 100%);
-  border-bottom: 1px solid var(--border);
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 0;
+  align-items: start;
+  padding: 20px 28px 0;
+}
+
+/* ── Left: cover + meta + actions ────────── */
+.album-left {
+  padding-right: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  position: sticky;
+  top: 20px;
 }
 
 .album-hero-cover {
   width: 100%;
   aspect-ratio: 1;
-  border-radius: 6px;
+  border-radius: 10px;
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, #1a0a0a 0%, #4a1020 45%, #c47060 100%);
-  box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+  background: linear-gradient(135deg, #1a0a0a 0%, #4a1020 50%, #c47060 100%);
+  box-shadow: 0 30px 70px rgba(0,0,0,0.7);
+  cursor: pointer;
   flex-shrink: 0;
 }
 
 .album-hero-cover::before {
   content: "";
   position: absolute;
-  inset: 22% 8% 0;
-  background: repeating-linear-gradient(90deg, rgba(255,255,255,0.1) 0 22px, rgba(0,0,0,0.08) 22px 44px);
-  mask-image: linear-gradient(to top, black 30%, transparent 100%);
+  inset: 20% 6% 0;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255,255,255,0.08) 0 18px,
+    transparent 18px 36px
+  );
+  mask-image: linear-gradient(to top, black 20%, transparent 100%);
+  pointer-events: none;
+}
+
+.album-cover-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+  display: block;
 }
 
 .album-cover-title {
   position: absolute;
-  left: 18px;
-  top: 18px;
-  right: 14px;
+  left: 16px;
+  top: 16px;
+  right: 12px;
   color: #fff;
-  font-size: clamp(1.2rem, 3vw, 1.8rem);
+  font-size: clamp(1rem, 2.5vw, 1.5rem);
   font-weight: 800;
-  line-height: 1.1;
+  line-height: 1.15;
+  z-index: 1;
 }
 
-/* ── Hero Info ──────────────────────────── */
-.album-hero-info {
-  min-width: 0;
+.album-cover-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 2;
+}
+
+.album-hero-cover:hover .album-cover-overlay,
+.album-hero-cover.cover-uploading .album-cover-overlay { opacity: 1; }
+
+.album-cover-overlay-text {
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+/* meta block under cover */
+.album-meta {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 4px;
 }
 
-.album-hero-label {
-  margin: 0 0 10px;
-  color: var(--text-2);
-  font-size: 0.68rem;
+.album-meta-label {
+  color: rgba(255,255,255,0.4);
+  font-size: 0.65rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
-.album-hero-name {
-  margin: 0 0 10px;
-  color: var(--text-0);
-  font-size: clamp(2rem, 5vw, 3.8rem);
+.album-meta-name {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(1.4rem, 3vw, 2.2rem);
   font-weight: 800;
-  line-height: 1.0;
+  line-height: 1.1;
   letter-spacing: -0.02em;
 }
 
-.album-hero-count {
-  margin: 0 0 24px;
-  color: var(--text-2);
-  font-size: 0.84rem;
-  font-weight: 500;
+.album-meta-count {
+  color: rgba(255,255,255,0.45);
+  font-size: 0.78rem;
+  font-weight: 400;
 }
 
-.album-hero-actions {
+/* action buttons under meta */
+.album-left-actions {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
+  flex-direction: column;
+  gap: 8px;
 }
 
-/* ── Upload progress bar ─────────────────── */
+.album-action-row {
+  display: flex;
+  gap: 8px;
+}
+
+/* ── Right: songs list ───────────────────── */
+.album-right {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Upload progress bar */
 .upload-bar-wrap {
   height: 2px;
-  background: var(--border);
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
   overflow: hidden;
+  margin-bottom: 8px;
 }
 
 .upload-bar {
   height: 100%;
-  background: var(--text-2);
+  background: rgba(255,255,255,0.5);
   transition: width 0.3s;
 }
 
-/* ── Songs table ─────────────────────────── */
-.songs-panel {
-  padding: 0;
-}
-
-/* header row */
+/* songs table header */
 .songs-head {
   display: grid;
-  grid-template-columns: 48px minmax(200px, 1.4fr) minmax(130px, 0.8fr) 70px 40px;
+  grid-template-columns: 36px minmax(0, 1fr) minmax(100px, 0.7fr) 58px 32px;
   align-items: center;
   gap: 8px;
-  height: 36px;
-  padding: 0 28px;
-  color: var(--text-2);
-  border-bottom: 1px solid var(--border);
-  font-size: 0.72rem;
+  height: 32px;
+  padding: 0 12px 0 8px;
+  color: rgba(255,255,255,0.3);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  font-size: 0.68rem;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
+  margin-bottom: 4px;
 }
 
-/* song row */
+/* song rows */
 .song-row {
   display: grid;
-  grid-template-columns: 48px minmax(200px, 1.4fr) minmax(130px, 0.8fr) 70px 40px;
+  grid-template-columns: 36px minmax(0, 1fr) minmax(100px, 0.7fr) 58px 32px;
   align-items: center;
   gap: 8px;
-  min-height: 52px;
-  padding: 0 28px;
-  border-bottom: 1px solid var(--border);
+  min-height: 44px;
+  padding: 0 12px 0 8px;
+  border-radius: 7px;
   cursor: pointer;
-  transition: background 0.12s;
+  transition: background 0.1s;
 }
 
 .song-row:hover {
-  background: rgba(255,255,255,0.04);
-}
-
-.song-row.active {
   background: rgba(255,255,255,0.06);
 }
 
-/* ── Song row cells ─────────────────────── */
+.song-row.active {
+  background: rgba(255,255,255,0.1);
+}
+
+/* number cell */
 .song-num {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   display: grid;
   place-items: center;
 }
 
 .song-num-text {
-  color: var(--text-2);
-  font-size: 0.82rem;
-  font-weight: 500;
+  color: rgba(255,255,255,0.35);
+  font-size: 0.8rem;
   font-variant-numeric: tabular-nums;
 }
 
-/* animated bars when playing */
+/* animated bars */
 .song-playing-bars {
   height: 14px;
   display: flex;
@@ -204,7 +378,7 @@
   width: 3px;
   display: block;
   border-radius: 2px;
-  background: var(--text-0);
+  background: #fff;
   animation: bar 0.9s ease infinite;
 }
 
@@ -216,32 +390,40 @@
   50%       { height: 14px; }
 }
 
+/* song title cell */
 .song-info {
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 10px;
 }
 
 .song-thumb {
-  width: 34px;
-  height: 34px;
-  display: grid;
-  place-items: center;
+  width: 30px;
+  height: 30px;
   flex: 0 0 auto;
   border-radius: 4px;
-  color: rgba(255,255,255,0.85);
-  background: var(--bg-4);
-  font-size: 0.72rem;
+  display: grid;
+  place-items: center;
+  color: rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.1);
+  font-size: 0.65rem;
   font-weight: 700;
-  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.song-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
 }
 
 .song-title {
   min-width: 0;
   margin: 0;
-  color: var(--text-0);
-  font-size: 0.86rem;
+  color: rgba(255,255,255,0.85);
+  font-size: 0.84rem;
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
@@ -253,36 +435,35 @@
   font-weight: 600;
 }
 
-.song-artist,
-.song-duration {
+.song-artist {
   min-width: 0;
-  color: var(--text-2);
-  font-size: 0.82rem;
-  font-weight: 400;
+  color: rgba(255,255,255,0.38);
+  font-size: 0.78rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .song-duration {
-  text-align: right;
+  color: rgba(255,255,255,0.38);
+  font-size: 0.78rem;
   font-variant-numeric: tabular-nums;
-  font-size: 0.8rem;
+  text-align: right;
 }
 
 .song-delete {
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   display: grid;
   place-items: center;
   justify-self: end;
   border: 0;
   border-radius: 50%;
-  color: var(--text-2);
+  color: rgba(255,255,255,0.35);
   background: transparent;
   cursor: pointer;
   opacity: 0;
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   transition: opacity 0.12s, background 0.12s, color 0.12s;
 }
 
@@ -290,76 +471,156 @@
 
 .song-delete:hover {
   color: #fff;
-  background: var(--red);
+  background: rgba(200, 50, 50, 0.7);
 }
 
-/* ── Loading / Empty states ──────────────── */
+/* ── Loading / Empty ─────────────────────── */
 .songs-loading,
 .songs-empty {
-  min-height: 240px;
+  min-height: 200px;
   display: grid;
   place-items: center;
-  color: var(--text-2);
+  color: rgba(255,255,255,0.3);
   text-align: center;
 }
 
 .songs-empty-inner {
-  max-width: 320px;
-  padding: 32px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--bg-2);
+  max-width: 300px;
+  padding: 28px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.04);
 }
 
 .songs-empty span {
-  width: 56px;
-  height: 56px;
+  width: 52px;
+  height: 52px;
   display: grid;
   place-items: center;
-  margin: 0 auto 14px;
+  margin: 0 auto 12px;
   border-radius: 50%;
-  color: var(--text-1);
-  background: var(--bg-3);
+  color: rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.08);
   font-weight: 700;
 }
 
-.songs-empty p { margin: 0 0 18px; font-size: 0.88rem; }
+.songs-empty p { margin: 0 0 16px; font-size: 0.84rem; }
+
+/* spinner */
+.spinner {
+  width: 28px;
+  height: 28px;
+  border: 2px solid rgba(255,255,255,0.12);
+  border-top-color: rgba(255,255,255,0.6);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Buttons ─────────────────────────────── */
+.btn-primary {
+  height: 36px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 20px;
+  background: #fff;
+  color: #0d0d0f;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+
+.btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+
+.btn-outline {
+  height: 36px;
+  padding: 0 18px;
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 20px;
+  background: transparent;
+  color: rgba(255,255,255,0.8);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+
+.btn-outline:hover {
+  border-color: rgba(255,255,255,0.55);
+  color: #fff;
+  background: rgba(255,255,255,0.07);
+}
+
+.btn-outline:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  height: 32px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.6);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.btn-ghost:hover {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+}
 
 /* ── Responsive ─────────────────────────── */
-@media (max-width: 980px) {
-  .album-hero {
-    grid-template-columns: 180px minmax(0, 1fr);
-    gap: 24px;
-    padding: 24px 16px 24px;
+@media (max-width: 900px) {
+  .album-content {
+    grid-template-columns: 1fr;
+    padding: 16px;
   }
 
-  .album-topbar { padding-inline: 16px; }
+  .album-left {
+    position: static;
+    padding-right: 0;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .album-hero-cover { width: min(180px, 45%); }
 
   .songs-head,
   .song-row {
-    grid-template-columns: 38px minmax(0, 1fr) 60px 32px;
-    padding-inline: 16px;
+    grid-template-columns: 32px minmax(0, 1fr) 52px 28px;
   }
 
   .songs-head span:nth-child(3),
   .song-artist { display: none; }
 }
 
-@media (max-width: 680px) {
-  .album-hero {
-    grid-template-columns: 1fr;
-    padding: 20px 16px;
+@media (max-width: 600px) {
+  .music-shell { grid-template-columns: 1fr; }
+
+  .sidebar {
+    min-height: auto;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 10px 12px;
+    border-right: 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
   }
 
-  .album-hero-cover {
-    width: min(200px, 100%);
-  }
+  .sidebar-label, .sidebar-profile { display: none; }
+  .sidebar-section { display: flex; gap: 6px; margin: 0; }
+  .sidebar-item { width: auto; margin: 0; flex: 0 0 auto; height: 30px; }
 
-  .songs-head { display: none; }
-
-  .song-row {
-    grid-template-columns: 32px minmax(0, 1fr) 52px 28px;
-    min-height: 52px;
-    padding-inline: 12px;
-  }
+  .album-hero-cover { width: min(160px, 40%); }
 }

@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { getSongs, uploadSong, deleteSong, getAlbums } from '../api';
+import { getSongs, uploadSong, deleteSong, getAlbums, uploadAlbumCover } from '../api';
 import { usePlayer } from '../context/PlayerContext';
-import './Home.css';
 import './AlbumPage.css';
 
 export default function AlbumPage() {
@@ -17,7 +16,10 @@ export default function AlbumPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [allAlbums, setAllAlbums] = useState([]);
+  const [coverUrl, setCoverUrl] = useState(album.cover_image_url || null);
+  const [coverUploading, setCoverUploading] = useState(false);
   const fileRef = useRef();
+  const coverRef = useRef();
 
   useEffect(() => {
     getSongs(id).then(setSongs).catch(console.error).finally(() => setLoading(false));
@@ -53,8 +55,7 @@ export default function AlbumPage() {
   };
 
   const handlePlay = (index) => {
-    const cur = current;
-    if (cur && cur.id === songs[index].id) {
+    if (current && current.id === songs[index].id) {
       togglePlay();
     } else {
       playSongs(songs, index);
@@ -68,6 +69,21 @@ export default function AlbumPage() {
     playSongs(songs, startIndex);
   };
 
+  const handleCoverSelect = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setCoverUploading(true);
+    try {
+      const updated = await uploadAlbumCover(id, file);
+      setCoverUrl(updated.cover_image_url);
+    } catch (err) {
+      alert('Cover upload failed: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setCoverUploading(false);
+      e.target.value = '';
+    }
+  };
+
   const formatDuration = (s) => {
     if (!s) return '--:--';
     return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
@@ -77,10 +93,12 @@ export default function AlbumPage() {
     <aside className="sidebar">
       <div className="sidebar-section">
         <p className="sidebar-label">Discover</p>
-        <button className="sidebar-item" onClick={() => navigate('/')}><span className="sidebar-icon">H</span> Home</button>
+        <button className="sidebar-item" onClick={() => navigate('/')}>
+          <span className="sidebar-icon">H</span> Home
+        </button>
       </div>
       <div className="sidebar-section">
-        <p className="sidebar-label">Playlists</p>
+        <p className="sidebar-label">Your Library</p>
         {allAlbums.map(a => (
           <button
             key={a.id}
@@ -100,34 +118,77 @@ export default function AlbumPage() {
 
   return (
     <div className="album-page">
+      {/* Blurred background from cover art */}
+      <div
+        className={`album-bg-blur ${coverUrl ? '' : 'no-cover'}`}
+        style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : {}}
+      />
+
       <div className="music-shell">
         <Sidebar />
+
         <main className="album-main">
+          {/* Top bar */}
           <header className="album-topbar">
             <p className="album-breadcrumb">Library / {album.name}</p>
             <div className="album-topbar-actions">
-              <button className="btn-ghost" onClick={() => navigate('/')}>Back</button>
-              <div className="search-pill"><span>Search</span><span>Find in playlist</span></div>
+              <button className="btn-ghost" onClick={() => navigate('/')}>← Back</button>
             </div>
           </header>
 
-          <section className="album-hero">
-            <div className="album-hero-cover">
-              <span className="album-cover-title">{album.name}</span>
-            </div>
-            <div className="album-hero-info">
-              <p className="album-hero-label">Album</p>
-              <h1 className="album-hero-name">{album.name}</h1>
-              <p className="album-hero-count">{songs.length} song{songs.length !== 1 ? 's' : ''} in this playlist</p>
-              <div className="album-hero-actions">
-                {songs.length > 0 && (
-                  <>
-                    <button className="btn-primary" onClick={() => playSongs(songs, 0)}>Play</button>
-                    <button className="btn-outline" onClick={handleShuffle}>Shuffle</button>
-                  </>
+          {/* Main content: left + right */}
+          <div className="album-content">
+
+            {/* LEFT — cover + meta + actions */}
+            <div className="album-left">
+              {/* Clickable cover */}
+              <div
+                className={`album-hero-cover ${coverUploading ? 'cover-uploading' : ''}`}
+                onClick={() => coverRef.current?.click()}
+                title="Click to change cover"
+              >
+                {coverUrl ? (
+                  <img src={coverUrl} alt={album.name} className="album-cover-img" />
+                ) : (
+                  <span className="album-cover-title">{album.name}</span>
                 )}
-                <button className="btn-outline" onClick={() => fileRef.current?.click()} disabled={uploading}>
-                  {uploading ? `Uploading ${uploadProgress}%` : 'Upload Song'}
+                <div className="album-cover-overlay">
+                  <span className="album-cover-overlay-text">
+                    {coverUploading ? 'Uploading…' : '📷 Change Cover'}
+                  </span>
+                </div>
+                <input
+                  ref={coverRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  style={{ display: 'none' }}
+                  onChange={handleCoverSelect}
+                />
+              </div>
+
+              {/* Meta */}
+              <div className="album-meta">
+                <span className="album-meta-label">Album</span>
+                <h1 className="album-meta-name">{album.name}</h1>
+                <p className="album-meta-count">
+                  {songs.length} song{songs.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+
+              {/* Actions */}
+              <div className="album-left-actions">
+                {songs.length > 0 && (
+                  <div className="album-action-row">
+                    <button className="btn-primary" onClick={() => playSongs(songs, 0)}>▶ Play</button>
+                    <button className="btn-outline" onClick={handleShuffle}>⇄ Shuffle</button>
+                  </div>
+                )}
+                <button
+                  className="btn-outline"
+                  onClick={() => fileRef.current?.click()}
+                  disabled={uploading}
+                >
+                  {uploading ? `Uploading ${uploadProgress}%` : '+ Upload Song'}
                 </button>
                 <input
                   ref={fileRef}
@@ -138,64 +199,86 @@ export default function AlbumPage() {
                 />
               </div>
             </div>
-          </section>
 
-          {uploading && (
-            <div className="upload-bar-wrap">
-              <div className="upload-bar" style={{ width: `${uploadProgress}%` }} />
-            </div>
-          )}
+            {/* RIGHT — songs list */}
+            <div className="album-right">
+              {uploading && (
+                <div className="upload-bar-wrap">
+                  <div className="upload-bar" style={{ width: `${uploadProgress}%` }} />
+                </div>
+              )}
 
-          <section className="songs-panel">
-            {loading ? (
-              <div className="songs-loading"><div className="spinner" /></div>
-            ) : songs.length === 0 ? (
-              <div className="songs-empty">
-                <div className="songs-empty-inner">
-                  <span>T</span>
-                  <p>No songs yet. Upload the first MP3 for this album.</p>
-                  <button className="btn-primary" onClick={() => fileRef.current?.click()}>Upload Song</button>
+              {loading ? (
+                <div className="songs-loading"><div className="spinner" /></div>
+              ) : songs.length === 0 ? (
+                <div className="songs-empty">
+                  <div className="songs-empty-inner">
+                    <span>T</span>
+                    <p>No songs yet. Upload the first MP3.</p>
+                    <button className="btn-primary" onClick={() => fileRef.current?.click()}>
+                      Upload Song
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <>
-                <div className="songs-head">
-                  <span />
-                  <span>Song</span>
-                  <span>Artist</span>
-                  <span>Time</span>
-                  <span />
-                </div>
-                {songs.map((song, i) => {
-                  const isActive = current?.id === song.id;
-                  return (
-                    <div
-                      key={song.id}
-                      className={`song-row ${isActive ? 'active' : ''}`}
-                      onClick={() => handlePlay(i)}
-                    >
-                      <div className="song-num">
-                        {isActive && isPlaying ? (
-                          <span className="song-playing-bars">
-                            <span /><span /><span />
+              ) : (
+                <>
+                  <div className="songs-head">
+                    <span>#</span>
+                    <span>Title</span>
+                    <span>Artist</span>
+                    <span style={{ textAlign: 'right' }}>Time</span>
+                    <span />
+                  </div>
+
+                  {songs.map((song, i) => {
+                    const isActive = current?.id === song.id;
+                    return (
+                      <div
+                        key={song.id}
+                        className={`song-row ${isActive ? 'active' : ''}`}
+                        onClick={() => handlePlay(i)}
+                      >
+                        {/* # */}
+                        <div className="song-num">
+                          {isActive && isPlaying ? (
+                            <span className="song-playing-bars">
+                              <span /><span /><span />
+                            </span>
+                          ) : (
+                            <span className="song-num-text">{i + 1}</span>
+                          )}
+                        </div>
+
+                        {/* Title */}
+                        <div className="song-info">
+                          <span className="song-thumb">
+                            {coverUrl
+                              ? <img src={coverUrl} alt="" />
+                              : album.name.slice(0, 1).toUpperCase()
+                            }
                           </span>
-                        ) : (
-                          <span className="song-num-text">{i + 1}</span>
-                        )}
+                          <p className="song-title">{song.title}</p>
+                        </div>
+
+                        {/* Artist */}
+                        <span className="song-artist">Tadipaar's Library</span>
+
+                        {/* Duration */}
+                        <span className="song-duration">{formatDuration(song.duration)}</span>
+
+                        {/* Delete */}
+                        <button
+                          className="song-delete"
+                          onClick={e => handleDelete(e, song.id)}
+                          title="Delete"
+                        >✕</button>
                       </div>
-                      <div className="song-info">
-                        <span className="song-thumb">{album.name.slice(0, 1).toUpperCase()}</span>
-                        <p className="song-title">{song.title}</p>
-                      </div>
-                      <span className="song-artist">Tadipaar's Library</span>
-                      <span className="song-duration">{formatDuration(song.duration)}</span>
-                      <button className="song-delete" onClick={e => handleDelete(e, song.id)}>x</button>
-                    </div>
-                  );
-                })}
-              </>
-            )}
-          </section>
+                    );
+                  })}
+                </>
+              )}
+            </div>
+          </div>
         </main>
       </div>
     </div>

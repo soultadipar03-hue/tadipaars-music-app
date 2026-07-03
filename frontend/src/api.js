@@ -18,6 +18,14 @@ export const verifyCode = (accessCode) => api.post('/api/auth/verify', { accessC
 export const getAlbums = () => api.get('/api/albums').then(r => r.data);
 export const createAlbum = (name) => api.post('/api/albums', { name }).then(r => r.data);
 export const deleteAlbum = (id) => api.delete(`/api/albums/${id}`);
+export const uploadAlbumCover = (albumId, file, onProgress) => {
+  const form = new FormData();
+  form.append('cover', file);
+  return api.post(`/api/albums/${albumId}/cover`, form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress: e => onProgress && onProgress(Math.round((e.loaded * 100) / e.total)),
+  }).then(r => r.data);
+};
 
 export const getSongs = (albumId) => api.get(`/api/songs/${albumId}`).then(r => r.data);
 export const uploadSong = (albumId, file, title, onProgress) => {
