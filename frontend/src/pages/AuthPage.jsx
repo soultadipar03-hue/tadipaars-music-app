@@ -55,6 +55,7 @@ export default function AuthPage() {
             value={code}
             onChange={e => setCode(e.target.value)}
             autoFocus
+            autoComplete="off"
             spellCheck={false}
           />
           {error && <p className="auth-error">{error}</p>}

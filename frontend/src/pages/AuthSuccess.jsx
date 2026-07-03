@@ -57,6 +57,7 @@ export default function AuthSuccess() {
           value={code}
           onChange={e => setCode(e.target.value)}
           autoFocus
+          autoComplete="off"
           spellCheck={false}
           style={{
             height: '48px',
