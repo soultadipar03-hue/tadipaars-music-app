@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { getSongs, uploadSong, deleteSong, getAlbums, uploadAlbumCover } from '../api';
+import { getSongs, uploadSong, deleteSong, getAlbums, uploadAlbumCover, getCoverUrl } from '../api';
 import { usePlayer } from '../context/PlayerContext';
 import './AlbumPage.css';
 
@@ -16,7 +16,7 @@ export default function AlbumPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [allAlbums, setAllAlbums] = useState([]);
-  const [coverUrl, setCoverUrl] = useState(album.cover_image_url || null);
+  const [coverUrl, setCoverUrl] = useState(null);
   const [coverUploading, setCoverUploading] = useState(false);
   const fileRef = useRef();
   const coverRef = useRef();
@@ -26,8 +26,16 @@ export default function AlbumPage() {
   }, [id]);
 
   useEffect(() => {
-    getAlbums().then(setAllAlbums).catch(console.error);
-  }, []);
+    // Fetch all albums — also check if this album has a cover already
+    getAlbums().then(albums => {
+      setAllAlbums(albums);
+      const thisAlbum = albums.find(a => a.id === id);
+      // If album has a cover stored, use our proxy URL
+      if (thisAlbum?.cover_drive_file_id) {
+        setCoverUrl(getCoverUrl(id));
+      }
+    }).catch(console.error);
+  }, [id]);
 
   const handleFileSelect = async (e) => {
     const file = e.target.files[0];
@@ -74,8 +82,9 @@ export default function AlbumPage() {
     if (!file) return;
     setCoverUploading(true);
     try {
-      const updated = await uploadAlbumCover(id, file);
-      setCoverUrl(updated.cover_image_url);
+      await uploadAlbumCover(id, file);
+      // Use proxy URL with cache-busting so the new image loads immediately
+      setCoverUrl(getCoverUrl(id) + '&t=' + Date.now());
     } catch (err) {
       alert('Cover upload failed: ' + (err.response?.data?.error || err.message));
     } finally {

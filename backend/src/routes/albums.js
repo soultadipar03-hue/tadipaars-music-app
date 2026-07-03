@@ -47,6 +47,36 @@ async function getOrCreateFolder(driveClient) {
   return folder.data.id;
 }
 
+// GET /api/albums/:id/cover — proxy cover image from Drive (avoids CORS/hotlink issues)
+router.get('/:id/cover', async (req, res) => {
+  try {
+    const { data: album, error } = await supabase
+      .from('albums')
+      .select('cover_drive_file_id, cover_image_url')
+      .eq('id', req.params.id)
+      .eq('user_id', req.user.id)
+      .single();
+
+    if (error || !album) return res.status(404).json({ error: 'Album not found' });
+    if (!album.cover_drive_file_id) return res.status(404).json({ error: 'No cover image' });
+
+    const driveClient = await getAuthenticatedDrive(req.user);
+    const driveResponse = await driveClient.files.get(
+      { fileId: album.cover_drive_file_id, alt: 'media' },
+      { responseType: 'stream' }
+    );
+
+    const contentType = driveResponse.headers?.['content-type'] || 'image/jpeg';
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    driveResponse.data.pipe(res);
+  } catch (err) {
+    console.error('Cover proxy error:', err);
+    if (!res.headersSent) res.status(500).json({ error: 'Failed to load cover' });
+  }
+});
+
 // GET /api/albums — list all albums for the authenticated user
 router.get('/', async (req, res) => {
   try {
@@ -150,16 +180,16 @@ router.post('/:id/cover', upload.single('cover'), async (req, res) => {
 
     const coverFileId = uploaded.data.id;
 
-    // Make it publicly readable
+    // Make it publicly readable (fallback for direct access)
     await driveClient.permissions.create({
       fileId: coverFileId,
       requestBody: { role: 'reader', type: 'anyone' },
     });
 
-    // Direct thumbnail URL that works in <img> tags
-    const coverUrl = `https://drive.google.com/thumbnail?id=${coverFileId}&sz=w400`;
+    // Use our own proxy endpoint — avoids Drive CORS/hotlink blocks
+    // cover_image_url stores a relative path so it works on any domain
+    const coverUrl = `/api/albums/${req.params.id}/cover`;
 
-    // Save to Supabase
     const { data: updated, error: updateErr } = await supabase
       .from('albums')
       .update({ cover_image_url: coverUrl, cover_drive_file_id: coverFileId })

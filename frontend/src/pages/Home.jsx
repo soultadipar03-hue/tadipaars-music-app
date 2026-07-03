@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getAlbums, createAlbum, deleteAlbum } from '../api';
+import { getAlbums, createAlbum, deleteAlbum, getCoverUrl } from '../api';
 import { useAuth } from '../context/AuthContext';
 import './Home.css';
 
@@ -148,10 +148,10 @@ export default function Home() {
                   <div key={album.id} className="album-card" onClick={() => openAlbum(album)}>
                     <div
                       className="album-cover"
-                      style={album.cover_image_url ? {} : { background: albumColors[i % albumColors.length] }}
+                      style={album.cover_drive_file_id ? {} : { background: albumColors[i % albumColors.length] }}
                     >
-                      {album.cover_image_url ? (
-                        <img src={album.cover_image_url} alt={album.name} className="album-cover-img" />
+                      {album.cover_drive_file_id ? (
+                        <img src={getCoverUrl(album.id)} alt={album.name} className="album-cover-img" />
                       ) : (
                         <span className="album-cover-icon">{album.name}</span>
                       )}

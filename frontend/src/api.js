@@ -46,3 +46,11 @@ export const getStreamUrl = (songId) => {
   const query = params.toString();
   return `${API_BASE_URL}/api/songs/${songId}/stream${query ? `?${query}` : ''}`;
 };
+
+export const getCoverUrl = (albumId) => {
+  const params = new URLSearchParams();
+  const code = localStorage.getItem('tadipaar_code');
+  if (code) params.set('code', code);
+  const query = params.toString();
+  return `${API_BASE_URL}/api/albums/${albumId}/cover${query ? `?${query}` : ''}`;
+};
