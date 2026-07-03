@@ -10,14 +10,16 @@ export default function AuthPage() {
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [view, setView] = useState('choice');
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleGoogleConnect = async () => {
+    setGoogleLoading(true);
     try {
       const url = await getGoogleAuthUrl();
       window.location.href = url;
     } catch {
-      setError('Failed to start Google auth. Make sure secrets are configured.');
+      setError('Failed to start Google auth.');
+      setGoogleLoading(false);
     }
   };
 
@@ -32,7 +34,7 @@ export default function AuthPage() {
       login(trimmed);
       navigate('/');
     } catch {
-      setError('Invalid or expired access code. Please try again.');
+      setError('Wrong password. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -44,39 +46,33 @@ export default function AuthPage() {
         <h1 className="auth-logo">Tadipaar's</h1>
         <p className="auth-tagline">Your personal music universe</p>
 
-        {view === 'choice' && (
-          <div className="auth-choices">
-            <button className="btn-primary" onClick={() => setView('code')}>
-              <span>🔑</span> Enter Access Code
-            </button>
-            <div className="auth-divider">or</div>
-            <button className="btn-outline" onClick={handleGoogleConnect}>
-              <span>🔗</span> Connect Google Drive (first time)
-            </button>
-          </div>
-        )}
+        {/* Password input — always visible */}
+        <form className="code-form" onSubmit={handleCodeSubmit}>
+          <input
+            className="code-input"
+            type="password"
+            placeholder="Enter password"
+            value={code}
+            onChange={e => setCode(e.target.value)}
+            autoFocus
+            spellCheck={false}
+          />
+          {error && <p className="auth-error">{error}</p>}
+          <button className="btn-primary" type="submit" disabled={loading}>
+            {loading ? 'Verifying...' : 'Enter App'}
+          </button>
+        </form>
 
-        {view === 'code' && (
-          <form className="code-form" onSubmit={handleCodeSubmit}>
-            <label>Enter your access code</label>
-            <input
-              className="code-input"
-              type="password"
-              placeholder="Enter password"
-              value={code}
-              onChange={e => setCode(e.target.value)}
-              autoFocus
-              spellCheck={false}
-            />
-            {error && <p className="auth-error">{error}</p>}
-            <button className="btn-primary" type="submit" disabled={loading}>
-              {loading ? 'Verifying...' : 'Enter App'}
-            </button>
-            <button className="btn-ghost" type="button" onClick={() => { setView('choice'); setError(''); }}>
-              ← Back
-            </button>
-          </form>
-        )}
+        <div className="auth-divider">or</div>
+
+        {/* Google Drive — first time setup */}
+        <button
+          className="btn-outline"
+          onClick={handleGoogleConnect}
+          disabled={googleLoading}
+        >
+          <span>🔗</span> {googleLoading ? 'Redirecting...' : 'Connect Google Drive'}
+        </button>
       </div>
     </div>
   );
