@@ -4,6 +4,9 @@ const { supabase } = require('../db');
 
 const router = express.Router();
 
+// Fixed access code — the single password for this app
+const FIXED_ACCESS_CODE = process.env.ACCESS_CODE || 'moveon';
+
 function getOAuth2Client() {
   return new OAuth2Client(
     process.env.GOOGLE_CLIENT_ID,
@@ -12,16 +15,6 @@ function getOAuth2Client() {
   );
 }
 
-function generateAccessCode() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let suffix = '';
-  for (let i = 0; i < 4; i++) {
-    suffix += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return `TMUS-${suffix}`;
-}
-
-// GET /api/auth/google — returns the Google OAuth URL
 const DEFAULT_FRONTEND_URL = 'http://localhost:5173';
 
 function getFrontendUrl() {
@@ -43,6 +36,7 @@ function getFrontendUrl() {
   }
 }
 
+// GET /api/auth/google — returns the Google OAuth URL
 router.get('/google', (req, res) => {
   const oauth2Client = getOAuth2Client();
   const url = oauth2Client.generateAuthUrl({
@@ -65,18 +59,23 @@ router.get('/callback', async (req, res) => {
     const oauth2Client = getOAuth2Client();
     const { tokens } = await oauth2Client.getToken(code);
 
-    const accessCode = generateAccessCode();
-
-    const { error } = await supabase.from('users').insert({
-      google_access_token: tokens.access_token,
-      google_refresh_token: tokens.refresh_token,
-      access_code: accessCode,
-    });
+    // Always upsert on the fixed access code so re-auth just refreshes tokens
+    const { error } = await supabase
+      .from('users')
+      .upsert(
+        {
+          access_code: FIXED_ACCESS_CODE,
+          google_access_token: tokens.access_token,
+          google_refresh_token: tokens.refresh_token,
+        },
+        { onConflict: 'access_code' }
+      );
 
     if (error) throw new Error(error.message);
 
-    const redirectUrl = new URL('/auth/success', getFrontendUrl());
-    redirectUrl.searchParams.set('code', accessCode);
+    // Redirect straight to home — no need to show a code page
+    const redirectUrl = new URL('/', getFrontendUrl());
+    redirectUrl.searchParams.set('code', FIXED_ACCESS_CODE);
     res.redirect(redirectUrl.toString());
   } catch (err) {
     console.error('OAuth callback error:', err);

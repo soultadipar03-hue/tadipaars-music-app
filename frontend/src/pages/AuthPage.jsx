@@ -23,7 +23,7 @@ export default function AuthPage() {
 
   const handleCodeSubmit = async (e) => {
     e.preventDefault();
-    const trimmed = code.trim().toUpperCase();
+    const trimmed = code.trim();
     if (!trimmed) return;
     setLoading(true);
     setError('');
@@ -61,11 +61,10 @@ export default function AuthPage() {
             <label>Enter your access code</label>
             <input
               className="code-input"
-              type="text"
-              placeholder="TMUS-XXXX"
+              type="password"
+              placeholder="Enter password"
               value={code}
               onChange={e => setCode(e.target.value)}
-              maxLength={9}
               autoFocus
               spellCheck={false}
             />

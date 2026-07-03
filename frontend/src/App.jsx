@@ -29,10 +29,11 @@ function AppRoutes() {
           </>
         )}
       </Routes>
-      <Player />
+      {accessCode && <Player />}
     </>
   );
 }
+
 
 export default function App() {
   const [splashDone, setSplashDone] = useState(false);
